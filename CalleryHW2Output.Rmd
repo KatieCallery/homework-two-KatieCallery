@@ -1,0 +1,264 @@
+---
+title: "CalleryHW2Output"
+author: "Katie Callery"
+date: "1/23/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Question 1
+
+```{r}
+plants<-read.csv("SEEDLING_SURVIVAL.csv")
+head(plants)
+```
+
+a.
+
+```{r}
+plot(plants$HEIGHT, plants$survival, xlab="height", ylab="survival")
+curve(plogis(0.5+0.125*x), add=T)
+```
+```{r}
+plot(plants$LIGHT, plants$survival, xlab="light", ylab="survival")
+curve(plogis(0.2+0.12*x), add=T)
+```
+
+b.
+
+```{r}
+heightModel<-glm(plants$survival~plants$HEIGHT, family="binomial")
+coef(heightModel)
+plogis(-0.06+0.1407*10)-plogis(-0.06+0.1407*5)
+# 0.138 is the difference between 5 and 10. 
+0.138/5
+# 0.0276 is the between 5 and 10.
+maxSlopeHeight=0.1407/4
+#0.035 is the maximum slope.
+```
+```{r}
+lightModel<-glm(plants$survival~plants$LIGHT, family="binomial")
+coef(lightModel)
+plogis(2.6-0.066*10)-(2.6-0.066*5)
+# -1.395648 is the difference between 5 and 10
+-1.395648/5
+#-0.2791296 is the slope between 5 and 10
+maxSlopeLight<-(-0.066/4)
+#-0.0165 is the maximum slope.
+
+```
+
+c.
+```{r}
+confint(heightModel)
+confint(lightModel)
+```
+
+
+Height is a better predictor of seedling survival than light. Light seem to have a significant negative effect on survival based on the slope parameter of the logistic model and the confidence intervals of the linear equation not overlapping with zero. Height seems to have a significant positive effect on survival based on the slope parameter of the logistic model and the confidence intervals of the linear equation not overlapping with zero. 
+
+QUESTIONS: *How do you get the confidence intervals of the logistic model? They would be changing as the slope changes, right? Is it not necessary to calculate them?*
+
+Question 2
+
+```{r}
+seeds<-read.csv("Seeds.csv")
+head(seeds)
+```
+
+a. I chose light as the predictor variable for recruitment
+
+```{r}
+seeds$probSuccess<-seeds$recruits/seeds$seeds
+plot(seeds$light, seeds$probSuccess, xlab="light", ylab="recruits")
+curve(plogis(0.079*x-3),add=T)
+
+```
+b. create a proportional variable for the binomial glm
+
+```{r}
+response<-cbind(seeds$recruits, seeds$seeds-seeds$recruits)
+lightRecruits<-glm(response~seeds$light, family="binomial")
+coef(lightRecruits)
+#Maximum slope:
+0.079/4
+# Maximum slope is 0.01975.
+# Slope between 2 points
+plogis(-3+0.079*10)-plogis(-3+0.079*5)
+#0.03003875 is the difference between 10 and 5. 
+0.03003875/5
+#0.00600775 is the slope between 10 and 5
+
+```
+
+c. confidence intervals for slope and intercept
+```{r}
+confint(lightRecruits)
+
+
+```
+
+Light has a small positive effect on survival, and it is significant because the confidence intervals do not overlap zero.  
+
+
+Question 3
+
+a.) b.)
+```{r}
+mosquito<-read.csv("mosquito_data.csv")
+head(mosquito)
+attach(mosquito)
+mosquito$success<-Emergent_adults/Egg_Count
+attach(mosquito)
+plot(Detritus, success, xlab="Amount of Detritus", ylab="Probability of Larval Success")
+larvalSuccess<-cbind(Emergent_adults, Egg_Count-Emergent_adults)
+glm(larvalSuccess~Detritus, family="binomial")
+
+#(Intercept)     Detritus  
+#     1.3240      -0.3216 
+
+curve(1.44 - 0.19*x - 0.21*x^2 + 0.04*x^3, add=T, col="red") #polynomial curve
+curve(10*x*exp(-2*x), add=T, col="blue") #Ricker curve
+```
+c.) The biological implication that is different between the models is that the Polynomial model predicts an increase in larval success when detritus is greater than 4, while the Ricker model does not predict such an increase.
+
+d.) Find maximum likelihood estimate through minimum negative log-likehood comparisons
+
+```{r}
+# for the polynomial
+-sum(dbinom(x = Emergent_adults, size=Egg_Count, prob=plogis(1.44 - 0.19*Detritus - 0.21*Detritus^2 + 0.04*Detritus^3), log=T))
+
+# for the Ricker
+-sum(dbinom(x = Emergent_adults, size=Egg_Count, prob=plogis(10*Detritus*exp(-2*Detritus)), log=T))
+
+#Polynomial =  1415.63
+#Ricker = 1385.847
+
+?dbinom
+
+# What does plogis do?
+# What does dbinom do?
+# How would you plot the maximum likelihood curves for this? 
+
+```
+
+e.) The likelihood is higher for the Ricker model. 
+
+Question 4
+
+```{r}
+# Example for-loop
+
+empty_vector<-rep(NA,times=100)
+for(i in 1:100){ empty_vector[i]<-rnorm(n=1,mean=0,sd=1)}
+
+```
+
+Reed et al. 2013, Phenological mismatch strongly affects individual fitness but not population demography in a woodland passerine (*Parus major*).
+
+Number of nestlings produced ~ individual (female) breeding mismatch with prey peak
+
+```{r}
+# variables
+
+slope<--0.015
+intercept<-2.555
+stdev<-0.2
+
+# predictor variable
+
+#mismatchDays<-round(runif(100, min=-60, max=60))
+
+# create a vector of samples sizes
+
+sample_size<-c(100:5000)
+
+# create a vector to fill with results of the power analysis the same length as the sample size vector
+
+length(sample_size) # = 4901
+
+# rep is repeat, NA is empty, and times is 4901
+slope_vector<-rep(NA,times=4901)
+power_vector<-rep(NA,times=4901)
+
+```
+Create the for loop!
+
+```{r}
+
+# For loop that will do the power analysis:
+# Each iteration will create a random normal sample of the data at the size specified by the iteration. Then it will create a model of that random data against the predictor variable. Then I will extract the slope estimate from the model, and store it in that iteration's cell in the power vector
+
+for(i in 1:4901){
+
+mismatchDays<-round(runif(i+99, min=-60, max=60))
+
+numFledge<-rnorm(n=sample_size[i], mean=(intercept+slope*mismatchDays), sd=stdev)
+
+FledgeMod<-glm(numFledge~mismatchDays)
+
+SumFledge<-summary(FledgeMod)
+
+getCoef<-coefficients(SumFledge)
+
+getSlope<-getCoef[2,1]
+getPower<-getCoef[2,4]
+
+slope_vector[i]<-getSlope
+
+power_vector[i]<-getPower
+
+}
+```
+
+Plot the output. The slope or power is plotted on the y-axis, and the sample size (100:5000) is plotted on the x-axis. 
+
+```{r}
+plot(sample_size, slope_vector, abline(h=-0.015,col="red"))
+```
+
+```{r}
+plot(sample_size, power_vector, abline(h=0.05, col="red", xlim=c(0,10)))
+
+
+```
+I'm not sure why my power graph looks like this... It should be centering around -0.015.... Am I doing something wrong with simulating my data?
+
+```{r}
+
+# Binomial data - I made this up. 
+
+slope_vecb<-rep(NA,times=50)
+power_vecb<-rep(NA,times=50)
+
+sample_size<-c(1:50)
+
+for(i in 1:50){
+
+predictor<-runif(sample_size[i], min=0, max=1)
+
+response<-rbinom(n=sample_size[i], size=1, prob=plogis(0.001+0.0025*predictor))
+
+model<-glm(response~predictor, family = "binomial")
+
+modelSum<-summary(model)
+
+coefMod<-coef(modelSum)
+
+slopeb<-coefMod[2]
+
+slope_vecb[i]<-slopeb
+
+}
+
+plot(sample_size, slope_vecb, ylim=c(0,1))
+
+```
+
+
+
